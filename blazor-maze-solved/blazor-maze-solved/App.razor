@@ -77,8 +77,8 @@
         await Solve(0, 0);
 
         grid[0][0]            = grid[0][0].Replace(VISITED, " bg-emerald-200"); // green start square
-        grid[0][0]            = grid[0][0].Replace(RIGHT_PATH, " bg-emerald-200"); // green start square
-        grid[0][colCount - 1] = grid[0][colCount - 1].Replace(RIGHT_PATH, END_COLOUR); // red finish square
+        grid[0][0]            = grid[0][0].Replace(GOOD_PATH, " bg-emerald-200"); // green start square
+        grid[0][colCount - 1] = grid[0][colCount - 1].Replace(GOOD_PATH, END_COLOUR); // red finish square
 
         ButtonText = "Solve Another Maze";
         disabled = false;
@@ -86,7 +86,7 @@
     }
 
     private const string VISITED = " bg-violet-400";
-    private const string RIGHT_PATH = " bg-violet-600";
+    private const string GOOD_PATH = " bg-violet-600";
 
     private const string LEFT_WALL = "border-l-cyan-500";
     private const string TOP_WALL = "border-t-cyan-500";
@@ -115,36 +115,29 @@
         var inPath = await  Solve(x, y);
         
         if (inPath)
-            grid[y][x] = grid[y][x].Replace(VISITED, "") + " " + RIGHT_PATH;
+            grid[y][x] = grid[y][x].Replace(VISITED, "") + " " + GOOD_PATH;
 
         return inPath;    
     }
 
-    private bool CanGoLeft(int x, int y) 
-    {
-        return x - 1 >= 0
-            && !grid[y][x].Contains(LEFT_WALL)
-            && !grid[y][x-1].Contains(VISITED);
-    }
+    private bool CanGoLeft(int x, int y) => 
+        x - 1 >= 0                       &&
+        !grid[y][x].Contains(LEFT_WALL)  &&
+        !grid[y][x-1].Contains(VISITED);
 
-    private bool CanGoRight(int x, int y) 
-    {
-        return x + 1 < colCount
-            && !grid[y][x+1].Contains(LEFT_WALL)
-            && !grid[y][x+1].Contains(VISITED);
-    }
+    private bool CanGoRight(int x, int y) => 
+        x + 1 < colCount                  && 
+        !grid[y][x+1].Contains(LEFT_WALL) && 
+        !grid[y][x+1].Contains(VISITED);
 
-    private bool CanGoUp(int x, int y) 
-    {
-        return y + 1 < rowCount
-            && !grid[y][x].Contains(TOP_WALL)
-            && !grid[y+1][x].Contains(VISITED);
-    } 
+    private bool CanGoUp(int x, int y) =>
+        y + 1 < rowCount               && 
+        !grid[y][x].Contains(TOP_WALL) && 
+        !grid[y+1][x].Contains(VISITED);
 
-    private bool CanGoDown(int x, int y) 
-    {
-        return y - 1 >= 0
-            && !grid[y-1][x].Contains(TOP_WALL)
-            && !grid[y-1][x].Contains(VISITED);
-    }    
+    private bool CanGoDown(int x, int y) => 
+        y - 1 >= 0                       && 
+        !grid[y-1][x].Contains(TOP_WALL) && 
+        !grid[y-1][x].Contains(VISITED);
+
 }
