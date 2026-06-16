@@ -1,0 +1,76 @@
+﻿@page "/maze"
+
+<button class="px-4 py-2 mt-10 mb-10 bg-orange-500 text-white rounded hover:bg-orange-700" @onclick="@(async () => await Generate())">Generate Maze</button>
+
+<div class="leading-normal grid grid-rows-@rowCount grid-cols-@colCount aspect-square border-b-4 border-r-4 border-cyan-500">
+
+    @for (int row = rowCount - 1; row >= 0; row--)
+    {
+            @for (int col = 0; col < colCount; col++)
+            {
+                <span class="border-t-4 border-l-4 @grid[row][col]">&nbsp;</span>
+            }
+    }
+
+</div>
+
+@code {
+    private const int rowCount = 30;
+    private const int colCount = 30;
+
+    // [row][column] format
+    private string[][] grid = ResetGrid();
+
+    Random random = new Random();
+
+    // Reset the grid to a clean initial state
+    private static string[][] ResetGrid()
+    {
+        var g = new string[rowCount][];
+
+        for (int i = 0; i < rowCount; i++)
+        {
+            g[i] = new string[colCount];
+            // set top and left borders
+            for (int j = 0; j < colCount; j++)
+                g[i][j] = "border-l-cyan-500 border-t-cyan-500";
+
+        }
+
+        g[0][0]            = g[0][0] + " bg-emerald-200"; // start square
+        g[0][colCount - 1] = g[0][0] + " bg-pink-200";    // finish square
+        return g;
+    }
+
+    // Sidewinder maze generator algorithm.
+    private async Task Generate()
+    {
+        grid = ResetGrid();
+
+        for (var y = 0; y < rowCount; y++)
+        {
+            var startOfRun = 0;
+
+            for (var x = 0; x < colCount; x++)
+            {
+                if (y < rowCount - 1 && (x + 1 == colCount || random.Next(0, 2) == 0))
+                {
+                    var cell = startOfRun + random.Next(0, x - startOfRun + 1);
+                    // Clear top border
+                    grid[y][cell] = grid[y][cell].Replace("border-t-cyan-500",                                                          "border-t-transparent");
+                    startOfRun = x + 1;
+                }
+
+                else if (x + 1 < colCount)
+                {
+                    // Clear right border.. i.e. clear left-border of next cell
+                    grid[y][x + 1] = grid[y][x + 1].Replace("border-l-cyan-500",
+                                                            "border-l-transparent");
+                }
+
+            }
+        }
+    
+        StateHasChanged();
+    }
+}

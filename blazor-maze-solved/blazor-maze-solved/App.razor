@@ -1,0 +1,150 @@
+﻿@using System.Runtime.CompilerServices
+<button disabled=@disabled class="px-4 py-2 mt-10 mb-10 bg-orange-500 text-white rounded hover:bg-orange-700" @onclick="@(async () => await Generate())">@ButtonText</button>
+
+<div class="leading-normal grid grid-rows-@rowCount grid-cols-@colCount aspect-square border-b-4 border-r-4 border-cyan-500">
+
+    @for (int row = rowCount - 1; row >= 0; row--)
+    {
+        @for (int col = 0; col < colCount; col++)
+        {
+            <span class="border-t-4 border-l-4 @grid[row][col]">&nbsp;</span>
+        }
+    }
+
+</div>
+
+@code {
+    private const int rowCount = 20;
+    private const int colCount = 20;
+    private bool disabled = false;
+
+    // [row][column] format
+    private string[][] grid = ResetGrid();
+
+    Random random = new Random();
+
+    // Reset the grid to a clean initial state
+    private static string[][] ResetGrid()
+    {
+        var g = new string[rowCount][];
+
+        for (int i = 0; i < rowCount; i++)
+        {
+            g[i] = new string[colCount];
+            // set top and left borders
+            for (int j = 0; j < colCount; j++)
+                g[i][j] = "border-l-cyan-500 border-t-cyan-500";
+        }
+
+        g[0][0]            += " bg-emerald-200"; // green start square
+        g[0][colCount - 1] += " " + END_COLOUR;  // red finish square
+        return g;
+    }
+
+    // Sidewinder maze generator algorithm.
+    private async Task Generate()
+    {
+        disabled = true;
+        grid = ResetGrid();
+        StateHasChanged();        
+
+        for (var y = 0; y < rowCount; y++)
+        {
+            var startOfRun = 0;
+
+            for (var x = 0; x < colCount; x++)
+            {
+                if (y < rowCount - 1 && (x + 1 == colCount || random.Next(0, 2) == 0))
+                {
+                    var cell = startOfRun + random.Next(0, x - startOfRun + 1);
+                    // Clear top border
+                    grid[y][cell] = grid[y][cell].Replace("border-t-cyan-500",
+                                                          "border-t-transparent");
+                    startOfRun = x + 1;
+                }
+
+                else if (x + 1 < colCount)
+                {
+                    // Clear right border.. i.e. clear left-border of next cell
+                    grid[y][x + 1] = grid[y][x + 1].Replace("border-l-cyan-500",
+                                                            "border-l-transparent");
+                }
+            }
+        }
+
+        StateHasChanged();
+
+        await Solve(0, 0);
+
+        grid[0][0]            = grid[0][0].Replace(VISITED, " bg-emerald-200"); // green start square
+        grid[0][0]            = grid[0][0].Replace(RIGHT_PATH, " bg-emerald-200"); // green start square
+        grid[0][colCount - 1] = grid[0][colCount - 1].Replace(RIGHT_PATH, END_COLOUR); // red finish square
+
+        ButtonText = "Solve Another Maze";
+        disabled = false;
+        StateHasChanged();
+    }
+
+    private const string VISITED = " bg-violet-400";
+    private const string RIGHT_PATH = " bg-violet-600";
+
+    private const string LEFT_WALL = "border-l-cyan-500";
+    private const string TOP_WALL = "border-t-cyan-500";
+    private const string END_COLOUR = "bg-pink-200";
+
+    private string ButtonText = "Generate and Solve Maze";
+
+    private async Task<bool> Solve(int x, int y)
+    {
+        if (grid[y][x].Contains(END_COLOUR))
+            return true;
+
+        return (  (CanGoLeft(x, y)  && await SolveAndSetPath(x - 1, y)) 
+               || (CanGoDown(x, y)  && await SolveAndSetPath(x, y - 1))
+               || (CanGoRight(x, y) && await SolveAndSetPath(x + 1, y)) 
+               || (CanGoUp(x, y)    && await SolveAndSetPath(x, y + 1)));
+    }
+
+    private async Task<bool> SolveAndSetPath(int x, int y)
+    {
+        grid[y][x] = grid[y][x] + " " + VISITED;
+        
+        await Task.Delay(1);
+        StateHasChanged();
+
+        var inPath = await  Solve(x, y);
+        
+        if (inPath)
+            grid[y][x] = grid[y][x].Replace(VISITED, "") + " " + RIGHT_PATH;
+
+        return inPath;    
+    }
+
+    private bool CanGoLeft(int x, int y) 
+    {
+        return x - 1 >= 0
+            && !grid[y][x].Contains(LEFT_WALL)
+            && !grid[y][x-1].Contains(VISITED);
+    }
+
+    private bool CanGoRight(int x, int y) 
+    {
+        return x + 1 < colCount
+            && !grid[y][x+1].Contains(LEFT_WALL)
+            && !grid[y][x+1].Contains(VISITED);
+    }
+
+    private bool CanGoUp(int x, int y) 
+    {
+        return y + 1 < rowCount
+            && !grid[y][x].Contains(TOP_WALL)
+            && !grid[y+1][x].Contains(VISITED);
+    } 
+
+    private bool CanGoDown(int x, int y) 
+    {
+        return y - 1 >= 0
+            && !grid[y-1][x].Contains(TOP_WALL)
+            && !grid[y-1][x].Contains(VISITED);
+    }    
+}
